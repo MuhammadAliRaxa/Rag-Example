@@ -1,0 +1,13 @@
+{
+  "title": "RAG Production Metrics Dashboard",
+  "panels": [
+    {
+      "title": "Query Latency (p95)",
+      "type": "graph"
+    },
+    {
+      "title": "Retrieval Precision@k",
+      "type": "stat"
+    }
+  ]
+}

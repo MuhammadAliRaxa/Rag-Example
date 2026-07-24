@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=development
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - vector-db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  vector-db:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"

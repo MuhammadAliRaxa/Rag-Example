@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-production-api
+  labels:
+    app: rag-production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rag-production
+  template:
+    metadata:
+      labels:
+        app: rag-production
+    spec:
+      containers:
+      - name: api
+        image: rag-production-api:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: rag-config
