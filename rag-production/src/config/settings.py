@@ -13,10 +13,13 @@ class Settings(BaseSettings):
     DEFAULT_MODEL: str = "gpt-4o-mini"
     
     # Vector DB
-    VECTOR_DB_TYPE: str = "chroma"  # chroma, qdrant, pinecone
+    VECTOR_DB_TYPE: str = "pinecone"  # chroma, qdrant, pinecone
     VECTOR_DB_URL: Optional[str] = None
     CHROMA_PERSIST_DIR: str = "./vectorstore/chroma"
     BM25_INDEX_PATH: str = "./vectorstore/bm25_index.pkl"
+    PINECONE_API_KEY: Optional[str] = None
+    PINECONE_INDEX_NAME: str = "rag-index"
+    PINECONE_HOST: Optional[str] = None  # Direct host URL (faster, skips DNS lookup)
 
     # Redis / Memory
     REDIS_URL: str = "redis://localhost:6379/0"

@@ -20,6 +20,11 @@ def mock_generate_response(message):
 
 @pytest.fixture(autouse=True)
 def mock_embedding_and_llm():
+    # Clear the vector store before each test run to prevent mock embeddings
+    # (which are all identical) from being flagged as duplicates from prior runs.
+    from src.ingestion.vectorstore import shared_vector_store
+    shared_vector_store.clear()
+
     with patch("src.api.routes.ingest.pipeline.embedder", new_callable=MagicMock) as mock_ingest_emb, \
          patch("src.api.routes.retrieve.embedder", new_callable=MagicMock) as mock_retrieve_emb, \
          patch("src.api.routes.chat.embedder", new_callable=MagicMock) as mock_chat_emb, \
