@@ -1,3 +1,4 @@
+from typing import List, Dict, Any
 from src.ingestion.vectorstore import VectorStoreManager, shared_vector_store
 
 class VectorSearchEngine:
