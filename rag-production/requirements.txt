@@ -21,6 +21,7 @@ openai>=1.14.0
 sentence-transformers>=2.5.0
 chromadb>=0.4.24
 google-generativeai>=0.8.0
+pinecone>=3.0.0
 
 # Utilities
 tqdm>=4.66.0
