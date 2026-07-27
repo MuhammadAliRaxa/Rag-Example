@@ -11,12 +11,19 @@ class MockEmbedder:
     def embed_query(self, text):
         return [0.1] * 384
 
+def mock_generate_response(message):
+    from src.ingestion.vectorstore import shared_vector_store
+    if shared_vector_store.bm25_chunks:
+        cid = shared_vector_store.bm25_chunks[0]["chunk_id"]
+        return f"This is a mock LLM response citing [Chunk {cid}]."
+    return "This is a mock LLM response."
+
 @pytest.fixture(autouse=True)
 def mock_embedding_and_llm():
     with patch("src.api.routes.ingest.pipeline.embedder", new_callable=MagicMock) as mock_ingest_emb, \
          patch("src.api.routes.retrieve.embedder", new_callable=MagicMock) as mock_retrieve_emb, \
          patch("src.api.routes.chat.embedder", new_callable=MagicMock) as mock_chat_emb, \
-         patch("src.generation.llm_client.LLMClient.generate_response", return_value="This is a mock LLM response."):
+         patch("src.generation.llm_client.LLMClient.generate_response", side_effect=mock_generate_response):
         
         mock_instance = MockEmbedder()
         mock_ingest_emb.embed_documents = mock_instance.embed_documents

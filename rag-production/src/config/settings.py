@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     # LLM Settings
     OPENAI_API_KEY: Optional[str] = None
     GROQ_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
     DEFAULT_MODEL: str = "gpt-4o-mini"
     
     # Vector DB
