@@ -4,9 +4,9 @@ from src.retrieval.vector_search import VectorSearchEngine
 from src.retrieval.keyword_search import KeywordSearchEngine
 
 class HybridSearchEngine:
-    def __init__(self):
-        self.vector_engine = VectorSearchEngine()
-        self.keyword_engine = KeywordSearchEngine()
+    def __init__(self, vector_store=None):
+        self.vector_engine = VectorSearchEngine(vector_store=vector_store)
+        self.keyword_engine = KeywordSearchEngine(vector_store=vector_store)
 
     def search(self, query: str, query_vector: List[float], top_k: int = 5, rr_k: int = 60) -> List[Dict[str, Any]]:
         """Reciprocal Rank Fusion (RRF) implementation."""

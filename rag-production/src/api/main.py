@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from src.api.routes import chat, ingest, health
+from src.api.routes import chat, ingest, health, retrieve
 from src.config.settings import settings
 
 app = FastAPI(
@@ -11,6 +11,7 @@ app = FastAPI(
 app.include_router(health.router, tags=["Health"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
 app.include_router(ingest.router, prefix="/api/v1", tags=["Ingestion"])
+app.include_router(retrieve.router, prefix="/api/v1", tags=["Retrieval"])
 
 @app.get("/")
 def read_root():

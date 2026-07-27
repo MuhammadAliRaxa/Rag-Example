@@ -178,3 +178,6 @@ class VectorStoreManager:
         if self.bm25_path.exists():
             self.bm25_path.unlink()
         logger.info("Cleared both ChromaDB and BM25 indexes.")
+
+# Shared singleton instance for process-wide index synchronization
+shared_vector_store = VectorStoreManager()

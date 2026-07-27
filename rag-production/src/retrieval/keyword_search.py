@@ -1,13 +1,29 @@
-"""BM25 / Keyword Search Module."""
-from typing import List, Dict, Any
+from src.ingestion.vectorstore import VectorStoreManager, shared_vector_store
 
 class KeywordSearchEngine:
-    def __init__(self):
-        self.index = []
+    def __init__(self, vector_store=None):
+        self.vector_store = vector_store or shared_vector_store
 
     def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """Executes BM25 keyword search over text corpus."""
-        return [
-            {"chunk_id": f"bm25_chunk_{i}", "text": f"Retrieved BM25 text snippet {i}", "score": 0.88 - (i * 0.04)}
-            for i in range(top_k)
-        ]
+        if not self.vector_store.bm25_index or not self.vector_store.bm25_chunks:
+            return []
+            
+        tokens = self.vector_store._tokenize(query)
+        scores = self.vector_store.bm25_index.get_scores(tokens)
+        
+        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
+        
+        output = []
+        for idx in top_indices:
+            score = float(scores[idx])
+            if score == 0.0:
+                continue
+            chunk = self.vector_store.bm25_chunks[idx]
+            output.append({
+                "chunk_id": chunk["chunk_id"],
+                "text": chunk["text"],
+                "score": score,
+                "metadata": chunk.get("metadata", {})
+            })
+        return output

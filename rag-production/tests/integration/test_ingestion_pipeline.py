@@ -31,7 +31,7 @@ def temp_environment():
         raw_dir = tmp / "data" / "raw"
         processed_dir = tmp / "data" / "processed"
 
-        mock_embedder = MockEmbeddingModelWrapper(api_key="mock-key")
+        mock_embedder = MockEmbeddingModelWrapper()
         vstore = VectorStoreManager(
             chroma_dir=str(chroma_dir),
             bm25_path=str(bm25_path),
