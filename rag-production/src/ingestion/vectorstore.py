@@ -71,7 +71,7 @@ class VectorStoreManager:
             logger.error(f"Error saving BM25 index to {self.bm25_path}: {e}")
 
     def add_chunks(self, chunks: List[Chunk], embeddings: List[List[float]]) -> int:
-        """Atomically add chunks to ChromaDB and update BM25 index."""
+        """Atomically add chunks to ChromaDB (via upsert) and update BM25 index."""
         if not chunks or not embeddings:
             return 0
 
@@ -95,29 +95,44 @@ class VectorStoreManager:
             }
             metadatas.append(meta)
 
-        # 1. Insert into ChromaDB
-        self.collection.add(
-            ids=ids,
-            embeddings=embeddings,
-            documents=documents,
-            metadatas=metadatas
-        )
+        # 1. Upsert into ChromaDB (handling dimension changes & duplicate IDs gracefully)
+        try:
+            self.collection.upsert(
+                ids=ids,
+                embeddings=embeddings,
+                documents=documents,
+                metadatas=metadatas
+            )
+        except Exception as e:
+            if "dimension" in str(e).lower() or "expecting embedding" in str(e).lower():
+                logger.warning(f"Embedding dimension changed ({e}). Re-creating collection for new dimension model.")
+                self.clear()
+                self.collection.upsert(
+                    ids=ids,
+                    embeddings=embeddings,
+                    documents=documents,
+                    metadatas=metadatas
+                )
+            else:
+                raise e
 
         # 2. Update BM25 index
+        existing_ids = {c["chunk_id"] for c in self.bm25_chunks}
         for c in chunks:
-            self.bm25_chunks.append({
-                "chunk_id": c.chunk_id,
-                "text": c.text,
-                "metadata": {
-                    "source": str(c.source),
-                    "chunk_index": int(c.chunk_index),
-                    "section_heading": str(c.section_heading or ""),
-                    "chunking_strategy": str(c.chunk_strategy),
-                    "character_count": int(c.char_count),
-                    "page_number": int(c.page_number),
-                    "raw_hash": str(c.raw_hash),
-                }
-            })
+            if c.chunk_id not in existing_ids:
+                self.bm25_chunks.append({
+                    "chunk_id": c.chunk_id,
+                    "text": c.text,
+                    "metadata": {
+                        "source": str(c.source),
+                        "chunk_index": int(c.chunk_index),
+                        "section_heading": str(c.section_heading or ""),
+                        "chunking_strategy": str(c.chunk_strategy),
+                        "character_count": int(c.char_count),
+                        "page_number": int(c.page_number),
+                        "raw_hash": str(c.raw_hash),
+                    }
+                })
 
         corpus_tokens = [self._tokenize(c["text"]) for c in self.bm25_chunks]
         self.bm25_index = BM25Okapi(corpus_tokens)
@@ -134,15 +149,26 @@ class VectorStoreManager:
         """Query ChromaDB by embedding vector."""
         if self.collection.count() == 0:
             return {"ids": [[]], "distances": [[]], "metadatas": [[]], "documents": [[]]}
-        return self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=min(top_k, self.collection.count()),
-            include=["documents", "metadatas", "distances"]
-        )
+
+        try:
+            return self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=min(top_k, self.collection.count()),
+                include=["documents", "metadatas", "distances"]
+            )
+        except Exception as e:
+            if "dimension" in str(e).lower() or "expecting embedding" in str(e).lower():
+                logger.warning(f"Embedding dimension mismatch during query ({e}). Clearing obsolete index.")
+                self.clear()
+                return {"ids": [[]], "distances": [[]], "metadatas": [[]], "documents": [[]]}
+            raise e
 
     def clear(self) -> None:
         """Clear both ChromaDB and BM25 indexes."""
-        self.client.delete_collection(name=self.collection_name)
+        try:
+            self.client.delete_collection(name=self.collection_name)
+        except Exception:
+            pass
         self.collection = self.client.get_or_create_collection(
             name=self.collection_name,
             metadata={"hnsw:space": "cosine"}

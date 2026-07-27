@@ -9,43 +9,18 @@ sys.path.insert(0, str(root_dir))
 from src.ingestion.pipeline import IngestionPipeline, IngestionResult
 from src.ingestion.embedder import EmbeddingModelWrapper
 
-
-class MockEmbeddingModelWrapper(EmbeddingModelWrapper):
-    """Mock embedder so the demo runs without requiring a live OpenAI API Key."""
-    def embed_documents(self, texts):
-        embeddings = []
-        for text in texts:
-            val = float(len(text) % 100) / 100.0
-            vec = [val] * 1536
-            embeddings.append(vec)
-        return embeddings
-
-    def embed_query(self, text):
-        return self.embed_documents([text])[0]
-
-
 def main():
     print("=" * 60)
     print("🚀 Running RAG Ingestion & Chunking Pipeline Smoke Test")
     print("=" * 60)
 
     # Create sample document
-    sample_file = root_dir / "data" / "raw" / "demo_doc.md"
+    sample_file = root_dir / "data" / "raw" / "NIPS-2017-attention-is-all-you-need-Paper.pdf"
     sample_file.parent.mkdir(parents=True, exist_ok=True)
-    sample_file.write_text(
-        "# Enterprise RAG Architecture\n\n"
-        "Retrieval-Augmented Generation (RAG) merges LLM capabilities with internal vector search.\n\n"
-        "## Ingestion and Chunking Strategy\n\n"
-        "Document loaders normalize markdown, plain text, HTML, and PDF formats into structured clean plaintext.\n"
-        "Configurable chunking strategies include fixed-size token splitting, recursive section header splitting, and semantic boundary detection.\n\n"
-        "## Dual Vector & Keyword Indexing\n\n"
-        "Chunks are indexed synchronously into ChromaDB vector store and BM25 sparse keyword index.\n"
-        "Two-stage deduplication uses SHA-256 exact matching and cosine similarity thresholding (>0.95) to prevent redundancy.",
-        encoding="utf-8"
-    )
+    print("sample_file", sample_file)
 
-    mock_embedder = MockEmbeddingModelWrapper(api_key="demo-key")
-    pipeline = IngestionPipeline(embedder=mock_embedder)
+    embedder = EmbeddingModelWrapper(model_name="all-MiniLM-L6-v2", device="mps")
+    pipeline = IngestionPipeline(embedder=embedder)
 
     print(f"\nProcessing file: {sample_file}")
     print("Running with strategy: 'recursive'...")

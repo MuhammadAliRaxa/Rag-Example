@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     PROCESSED_DOCS_DIR: str = "./data/processed"
     
     # Ingestion & Chunking
-    CHUNK_STRATEGY: str = "recursive"  # fixed, recursive, semantic
+    CHUNK_STRATEGY: str = "semantic"  # fixed, recursive, semantic
     CHUNK_SIZE: int = 512
     CHUNK_OVERLAP: int = 64
     SEMANTIC_SIMILARITY_THRESHOLD: float = 0.95

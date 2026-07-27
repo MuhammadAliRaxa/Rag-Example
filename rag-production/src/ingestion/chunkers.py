@@ -51,6 +51,7 @@ class FixedSizeChunker(BaseChunker):
             return []
 
         chunks: List[Chunk] = []
+        page_num = doc.metadata.get("page_number", 1)
         
         if self.tokenizer:
             tokens = self.tokenizer.encode(text)
@@ -63,13 +64,13 @@ class FixedSizeChunker(BaseChunker):
                 chunk_text = self.tokenizer.decode(chunk_tokens).strip()
                 
                 if chunk_text:
-                    c_id = f"{doc.raw_hash}_fixed_{chunk_seq}"
+                    c_id = f"{doc.raw_hash}_p{page_num}_fixed_{chunk_seq}"
                     chunk_meta = {
                         **doc.metadata,
                         "chunk_index": chunk_seq,
                         "chunk_strategy": "fixed",
                         "section_heading": doc.metadata.get("section_heading", ""),
-                        "page_number": doc.metadata.get("page_number", 1),
+                        "page_number": page_num,
                         "char_count": len(chunk_text),
                         "token_count": len(chunk_tokens),
                         "source": doc.source_path,
@@ -85,7 +86,7 @@ class FixedSizeChunker(BaseChunker):
                             section_heading=doc.metadata.get("section_heading", ""),
                             chunk_strategy="fixed",
                             char_count=len(chunk_text),
-                            page_number=doc.metadata.get("page_number", 1),
+                            page_number=page_num,
                             metadata=chunk_meta,
                         )
                     )
@@ -102,13 +103,13 @@ class FixedSizeChunker(BaseChunker):
             for idx in range(0, len(text), step):
                 chunk_text = text[idx : idx + char_chunk_size].strip()
                 if chunk_text:
-                    c_id = f"{doc.raw_hash}_fixed_{chunk_seq}"
+                    c_id = f"{doc.raw_hash}_p{page_num}_fixed_{chunk_seq}"
                     chunk_meta = {
                         **doc.metadata,
                         "chunk_index": chunk_seq,
                         "chunk_strategy": "fixed",
                         "section_heading": doc.metadata.get("section_heading", ""),
-                        "page_number": doc.metadata.get("page_number", 1),
+                        "page_number": page_num,
                         "char_count": len(chunk_text),
                         "source": doc.source_path,
                         "raw_hash": doc.raw_hash,
@@ -123,7 +124,7 @@ class FixedSizeChunker(BaseChunker):
                             section_heading=doc.metadata.get("section_heading", ""),
                             chunk_strategy="fixed",
                             char_count=len(chunk_text),
-                            page_number=doc.metadata.get("page_number", 1),
+                            page_number=page_num,
                             metadata=chunk_meta,
                         )
                     )
@@ -216,6 +217,7 @@ class RecursiveChunker(BaseChunker):
     def chunk_document(self, doc: RawDocument) -> List[Chunk]:
         raw_splits = self._split_text(doc.content, self.separators)
         chunks: List[Chunk] = []
+        page_num = doc.metadata.get("page_number", 1)
         
         current_heading = doc.metadata.get("section_heading", "")
 
@@ -228,13 +230,13 @@ class RecursiveChunker(BaseChunker):
             if heading != current_heading:
                 current_heading = heading
 
-            c_id = f"{doc.raw_hash}_rec_{seq}"
+            c_id = f"{doc.raw_hash}_p{page_num}_rec_{seq}"
             chunk_meta = {
                 **doc.metadata,
                 "chunk_index": seq,
                 "chunk_strategy": "recursive",
                 "section_heading": heading,
-                "page_number": doc.metadata.get("page_number", 1),
+                "page_number": page_num,
                 "char_count": len(clean_split),
                 "token_count": self.count_tokens(clean_split),
                 "source": doc.source_path,
@@ -250,7 +252,7 @@ class RecursiveChunker(BaseChunker):
                     section_heading=heading,
                     chunk_strategy="recursive",
                     char_count=len(clean_split),
-                    page_number=doc.metadata.get("page_number", 1),
+                    page_number=page_num,
                     metadata=chunk_meta,
                 )
             )
@@ -329,6 +331,7 @@ class SemanticChunker(BaseChunker):
             grouped_chunks_texts.append(" ".join(current_group))
 
         chunks: List[Chunk] = []
+        page_num = doc.metadata.get("page_number", 1)
         current_heading = doc.metadata.get("section_heading", "")
 
         for seq, text in enumerate(grouped_chunks_texts):
@@ -340,13 +343,13 @@ class SemanticChunker(BaseChunker):
             if match:
                 current_heading = match.group(2).strip()
 
-            c_id = f"{doc.raw_hash}_sem_{seq}"
+            c_id = f"{doc.raw_hash}_p{page_num}_sem_{seq}"
             chunk_meta = {
                 **doc.metadata,
                 "chunk_index": seq,
                 "chunk_strategy": "semantic",
                 "section_heading": current_heading,
-                "page_number": doc.metadata.get("page_number", 1),
+                "page_number": page_num,
                 "char_count": len(clean_text),
                 "token_count": self.count_tokens(clean_text),
                 "source": doc.source_path,
@@ -362,7 +365,7 @@ class SemanticChunker(BaseChunker):
                     section_heading=current_heading,
                     chunk_strategy="semantic",
                     char_count=len(clean_text),
-                    page_number=doc.metadata.get("page_number", 1),
+                    page_number=page_num,
                     metadata=chunk_meta,
                 )
             )
