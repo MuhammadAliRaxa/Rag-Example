@@ -51,3 +51,7 @@ class EmbeddingModelWrapper:
         if norm_a == 0 or norm_b == 0:
             return 0.0
         return float(np.dot(a, b) / (norm_a * norm_b))
+
+
+# Shared singleton instance for process-wide model reuse
+shared_embedder = EmbeddingModelWrapper()

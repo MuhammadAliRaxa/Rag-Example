@@ -4,7 +4,7 @@ from src.retrieval.hybrid import HybridSearchEngine
 from src.generation.llm_client import LLMClient
 from src.generation.citation_mapper import CitationMapper
 from src.memory.conversation_store import RedisConversationStore
-from src.ingestion.embedder import EmbeddingModelWrapper
+from src.ingestion.embedder import shared_embedder
 
 from src.ingestion.vectorstore import shared_vector_store
 
@@ -15,7 +15,7 @@ search_engine = HybridSearchEngine(vector_store=shared_vector_store)
 llm_client = LLMClient()
 citation_mapper = CitationMapper()
 memory_store = RedisConversationStore()
-embedder = EmbeddingModelWrapper()
+embedder = shared_embedder
 
 @router.post("/chat", response_model=ChatResponse)
 def chat_endpoint(request: ChatRequest):

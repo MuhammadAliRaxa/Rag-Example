@@ -26,16 +26,13 @@ class MockEmbeddingModelWrapper(EmbeddingModelWrapper):
 def temp_environment():
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
-        chroma_dir = tmp / "chroma"
         bm25_path = tmp / "bm25.pkl"
         raw_dir = tmp / "data" / "raw"
         processed_dir = tmp / "data" / "processed"
 
         mock_embedder = MockEmbeddingModelWrapper()
         vstore = VectorStoreManager(
-            chroma_dir=str(chroma_dir),
             bm25_path=str(bm25_path),
-            collection_name="test_rag_docs"
         )
         pipeline = IngestionPipeline(
             embedder=mock_embedder,
@@ -93,9 +90,9 @@ def test_pipeline_different_strategies(temp_environment):
     assert res_fixed.inserted_chunks > 0
     assert vstore.get_collection_count() == res_fixed.inserted_chunks
 
-    # Verify metadata in ChromaDB
-    collection_items = vstore.collection.get()
-    for meta in collection_items["metadatas"]:
+    # Verify metadata stored in BM25 index (mirrors Pinecone metadata)
+    for chunk_data in vstore.bm25_chunks:
+        meta = chunk_data["metadata"]
         assert meta["chunking_strategy"] == "fixed"
         assert "character_count" in meta
         assert "source" in meta

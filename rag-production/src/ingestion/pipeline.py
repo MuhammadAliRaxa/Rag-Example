@@ -6,7 +6,7 @@ from src.config.settings import settings
 from src.config.logging_config import logger
 from src.ingestion.loaders import DocumentLoader, RawDocument
 from src.ingestion.chunkers import get_chunker, BaseChunker, Chunk
-from src.ingestion.embedder import EmbeddingModelWrapper
+from src.ingestion.embedder import EmbeddingModelWrapper, shared_embedder
 from src.ingestion.dedupe import Deduplicator
 from src.ingestion.vectorstore import VectorStoreManager
 
@@ -31,7 +31,7 @@ class IngestionPipeline:
         deduplicator: Optional[Deduplicator] = None,
     ):
         self.loader = loader or DocumentLoader()
-        self.embedder = embedder or EmbeddingModelWrapper()
+        self.embedder = embedder or shared_embedder
         self.vector_store = vector_store or VectorStoreManager()
         self.deduplicator = deduplicator or Deduplicator(vector_store=self.vector_store)
 
@@ -68,8 +68,8 @@ class IngestionPipeline:
             chunk_embeddings = []
 
         # 3. Deduplication check before insertion
-        for chunk, embedding in zip(all_chunks, chunk_embeddings):
-            dedupe_res = self.deduplicator.check_near_duplicate(chunk.text, embedding)
+        dedupe_results = self.deduplicator.check_near_duplicates_batch(all_chunks, chunk_embeddings)
+        for chunk, embedding, dedupe_res in zip(all_chunks, chunk_embeddings, dedupe_results):
             if dedupe_res.is_duplicate:
                 if dedupe_res.reason == "exact_hash":
                     skipped_exact += 1

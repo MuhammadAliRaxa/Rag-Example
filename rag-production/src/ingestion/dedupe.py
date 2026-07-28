@@ -1,12 +1,17 @@
 """Exact hash and cosine similarity near-duplicate detection."""
+from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
-from typing import Set, Optional, List, Tuple
+from typing import TYPE_CHECKING, Set, Optional, List, Tuple
 
 from src.config.settings import settings
 from src.config.logging_config import logger
 from src.ingestion.embedder import EmbeddingModelWrapper
 from src.ingestion.vectorstore import VectorStoreManager
+
+if TYPE_CHECKING:
+    from src.ingestion.chunkers import Chunk
+
 
 
 @dataclass
@@ -76,6 +81,57 @@ class Deduplicator:
                     )
 
         return DedupeResult(is_duplicate=False, reason="unique", similarity_score=0.0)
+
+    def check_near_duplicates_batch(
+        self, chunks: List[Chunk], embeddings: List[List[float]]
+    ) -> List[DedupeResult]:
+        """Batch version of near-duplicate check."""
+        results: List[Optional[DedupeResult]] = [None] * len(chunks)
+        to_query_indices: List[int] = []
+        to_query_embeddings: List[List[float]] = []
+
+        # 1. Exact hash check
+        for i, chunk in enumerate(chunks):
+            if self.check_exact_duplicate(chunk.text):
+                results[i] = DedupeResult(
+                    is_duplicate=True,
+                    reason="exact_hash",
+                    similarity_score=1.0
+                )
+            else:
+                to_query_indices.append(i)
+                to_query_embeddings.append(embeddings[i])
+
+        # 2. Near-duplicate cosine similarity check in batch against existing vector store
+        if to_query_embeddings and self.vector_store and self.vector_store.get_collection_count() > 0:
+            query_results = self.vector_store.query_similar_embeddings_batch(to_query_embeddings, top_k=1)
+            
+            for idx, query_res in zip(to_query_indices, query_results):
+                distances = query_res.get("distances", [])
+                ids = query_res.get("ids", [])
+
+                if distances and ids:
+                    cosine_dist = distances[0]
+                    cosine_sim = 1.0 - cosine_dist
+
+                    if cosine_sim >= self.similarity_threshold:
+                        matched_id = ids[0]
+                        logger.info(
+                            f"Flagged near-duplicate chunk (similarity={cosine_sim:.4f} >= {self.similarity_threshold}): {matched_id}"
+                        )
+                        results[idx] = DedupeResult(
+                            is_duplicate=True,
+                            reason="cosine_similarity",
+                            similar_chunk_id=matched_id,
+                            similarity_score=cosine_sim
+                        )
+
+        # Fill remaining None with unique DedupeResult
+        for i in range(len(results)):
+            if results[i] is None:
+                results[i] = DedupeResult(is_duplicate=False, reason="unique", similarity_score=0.0)
+
+        return results
 
 
 # Backward compatibility alias

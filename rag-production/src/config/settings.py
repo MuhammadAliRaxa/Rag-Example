@@ -12,10 +12,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     DEFAULT_MODEL: str = "gpt-4o-mini"
     
-    # Vector DB
-    VECTOR_DB_TYPE: str = "pinecone"  # chroma, qdrant, pinecone
+    # Vector DB (Pinecone)
     VECTOR_DB_URL: Optional[str] = None
-    CHROMA_PERSIST_DIR: str = "./vectorstore/chroma"
     BM25_INDEX_PATH: str = "./vectorstore/bm25_index.pkl"
     PINECONE_API_KEY: Optional[str] = None
     PINECONE_INDEX_NAME: str = "rag-index"

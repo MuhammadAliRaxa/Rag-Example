@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from src.api.schemas import RetrieveRequest, RetrieveResponse
 from src.retrieval.hybrid import HybridSearchEngine
-from src.ingestion.embedder import EmbeddingModelWrapper
+from src.ingestion.embedder import shared_embedder
 
 from src.ingestion.vectorstore import shared_vector_store
 
 router = APIRouter()
 search_engine = HybridSearchEngine(vector_store=shared_vector_store)
-embedder = EmbeddingModelWrapper()
+embedder = shared_embedder
 
 @router.post("/retrieve", response_model=RetrieveResponse)
 def retrieve_endpoint(request: RetrieveRequest):
