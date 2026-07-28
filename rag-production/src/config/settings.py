@@ -1,5 +1,8 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
 from typing import Optional
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
     APP_NAME: str = "RAG Production API"
@@ -14,23 +17,23 @@ class Settings(BaseSettings):
     
     # Vector DB (Pinecone)
     VECTOR_DB_URL: Optional[str] = None
-    BM25_INDEX_PATH: str = "./vectorstore/bm25_index.pkl"
+    BM25_INDEX_PATH: Path = BASE_DIR / "vectorstore" / "bm25_index.pkl"
     PINECONE_API_KEY: Optional[str] = None
     PINECONE_INDEX_NAME: str = "rag-index"
-    PINECONE_HOST: Optional[str] = None  # Direct host URL (faster, skips DNS lookup)
+    PINECONE_HOST: Optional[str] = None
 
     # Redis / Memory
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # Document Storage
-    RAW_DOCS_DIR: str = "./data/raw"
-    PROCESSED_DOCS_DIR: str = "./data/processed"
+    RAW_DOCS_DIR: Path = BASE_DIR / "data" / "raw"
+    PROCESSED_DOCS_DIR: Path = BASE_DIR / "data" / "processed"
     
     # Ingestion & Chunking
-    CHUNK_STRATEGY: str = "semantic"  # fixed, recursive, semantic
+    CHUNK_STRATEGY: str = "semantic"
     CHUNK_SIZE: int = 512
     CHUNK_OVERLAP: int = 64
-    SEMANTIC_SIMILARITY_THRESHOLD: float = 0.95
+    SEMANTIC_SIMILARITY_THRESHOLD: float = 0.80  # Lowered for better chunking behavior
     SEMANTIC_SPLIT_THRESHOLD: float = 0.75
     
     # Embedding
